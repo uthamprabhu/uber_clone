@@ -5,16 +5,67 @@ import InputField from '@/components/InputField'
 import CustomButton from '@/components/CustomButton'
 import { Link } from 'expo-router'
 import OAuth from '@/components/OAuth'
+import { useSignUp } from '@clerk/clerk-expo'
+import ReactNativeModal from 'react-native-modal'
 
 const SignUp = () => {
+  const { isLoaded, signUp, setActive } = useSignUp()
+
   const [form, setForm] = useState({
     name: '',
     email: '',
     password: ''
   })
 
-  const onSignUpPress = async () => {
+  const [verification, setVerification] = useState({
+    state: 'default',
+    error: '',
+    code: '',
+  })
 
+  const onSignUpPress = async () => {
+    if (!isLoaded) {
+      return
+    }
+
+    try {
+      await signUp.create({
+        emailAddress: form.email,
+        password: form.password,
+      })
+
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
+
+      setVerification({
+        ...verification,
+        state: 'pending'
+      })
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2))
+    }
+  }
+
+  const onPressVerify = async () => {
+    if (!isLoaded) {
+      return
+    }
+
+    try {
+      const completeSignUp = await signUp.attemptEmailAddressVerification({
+        code: verification.code,
+      })
+
+      if (completeSignUp.status === 'complete') {
+        // TODO: Create a db user!!!
+
+        await setActive({ session: completeSignUp.createdSessionId })
+        setVerification({ ...verification, state: "success" })
+      } else {
+        setVerification({ ...verification, error: 'Verification failed', state: "failed" })
+      }
+    } catch (err: any) {
+      setVerification({ ...verification, error: err.errors[0].longMessage, state: "failed" })
+    }
   }
 
   return (
@@ -78,7 +129,8 @@ const SignUp = () => {
 
         </View>
 
-        {/* verification modal */}
+        <ReactNativeModal children={undefined}>
+        </ReactNativeModal>
 
       </View>
     </ScrollView>
