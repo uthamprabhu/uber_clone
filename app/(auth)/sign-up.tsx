@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Image, Button, Alert } from 'react-native'
+import { View, Text, ScrollView, Image, Alert } from 'react-native'
 import React, { useState } from 'react'
 import { icons, images } from '@/constants'
 import InputField from '@/components/InputField'
@@ -13,29 +13,28 @@ const SignUp = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: ''
+    name: "",
+    email: "",
+    password: ""
   })
 
   const [verification, setVerification] = useState({
-    state: 'default',
-    error: '',
-    code: '',
+    state: "default",
+    error: "",
+    code: "",
   })
 
   const onSignUpPress = async () => {
-    if (!isLoaded) {
-      return
-    }
+    if (!isLoaded) return
 
     try {
-      await signUp.create({
+      const signUpResponse = await signUp.create({
         emailAddress: form.email,
         password: form.password,
       })
+      console.log(form.email)
 
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
+      await signUpResponse.prepareEmailAddressVerification({ strategy: 'email_code' })
 
       setVerification({
         ...verification,
@@ -48,9 +47,7 @@ const SignUp = () => {
   }
 
   const onPressVerify = async () => {
-    if (!isLoaded) {
-      return
-    }
+    if (!isLoaded) return
 
     try {
       const completeSignUp = await signUp.attemptEmailAddressVerification({
@@ -63,7 +60,7 @@ const SignUp = () => {
         await setActive({ session: completeSignUp.createdSessionId })
         setVerification({ ...verification, state: "success" })
       } else {
-        setVerification({ ...verification, error: 'Verification failed', state: "failed" })
+        setVerification({ ...verification, error: 'Verification failed. Please try again.', state: "failed" })
       }
     } catch (err: any) {
       setVerification({ ...verification, error: err.errors[0].longMessage, state: "failed" })
@@ -97,6 +94,7 @@ const SignUp = () => {
             label="Email"
             placeholder="Enter your email"
             icon={icons.email}
+            textContentType='emailAddress'
             value={form.email}
             onChangeText={(value) => (
               setForm({ ...form, email: value })
@@ -107,6 +105,7 @@ const SignUp = () => {
             placeholder="Enter your password"
             icon={icons.lock}
             secureTextEntry={true}
+            textContentType='password'
             value={form.password}
             onChangeText={(value) => (
               setForm({ ...form, password: value })
